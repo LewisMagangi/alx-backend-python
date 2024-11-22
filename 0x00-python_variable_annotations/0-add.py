@@ -1,2 +1,4 @@
+#!/usr/bin/env python3
+
 def add(a: float, b:int) -> float:
-    return sum(a, b)
+    return float(sum(a, b))
