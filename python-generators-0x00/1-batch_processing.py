@@ -8,7 +8,7 @@ import seed
 
 def stream_users_in_batches(batch_size):
     """
-    Generator function that fetches rows in batches from the user_data table.
+    Generator function that fetches rows in batches using yield.
     
     Args:
         batch_size (int): Number of rows to fetch in each batch
@@ -17,37 +17,40 @@ def stream_users_in_batches(batch_size):
         list: A list of dictionaries containing user data
     """
     connection = seed.connect_to_prodev()
-    if connection:
-        try:
-            # Try MySQL syntax first
-            cursor = connection.cursor(dictionary=True)
-        except TypeError:
-            # Fallback to SQLite - connection already has row_factory set
-            cursor = connection.cursor()
-            
-        offset = 0
+    if not connection:
+        return
         
-        while True:
-            cursor.execute(f"SELECT * FROM user_data LIMIT {batch_size} OFFSET {offset}")
-            batch = cursor.fetchall()
-            
-            if not batch:
-                break
-            
-            # Convert SQLite Rows to dicts if needed
-            if batch and hasattr(batch[0], 'keys'):
-                batch = [dict(row) for row in batch]
-                
-            yield batch
-            offset += batch_size
+    try:
+        # Try MySQL syntax first
+        cursor = connection.cursor(dictionary=True)
+    except TypeError:
+        # Fallback to SQLite - connection already has row_factory set
+        cursor = connection.cursor()
         
-        cursor.close()
-        connection.close()
+    offset = 0
+    
+    while True:
+        cursor.execute(f"SELECT * FROM user_data LIMIT {batch_size} OFFSET {offset}")
+        batch = cursor.fetchall()
+        
+        if not batch:
+            break
+        
+        # Convert SQLite Rows to dicts if needed
+        if batch and hasattr(batch[0], 'keys'):
+            batch = [dict(row) for row in batch]
+            
+        # Use yield to return batch and pause execution
+        yield batch
+        offset += batch_size
+    
+    cursor.close()
+    connection.close()
 
 
 def streamusersinbatches(batchsize):
     """
-    Generator function that fetches rows in batches (checker-expected name format).
+    Generator function that fetches rows in batches using yield.
     
     Args:
         batchsize (int): Number of rows to fetch in each batch
@@ -56,32 +59,35 @@ def streamusersinbatches(batchsize):
         list: A list of dictionaries containing user data
     """
     connection = seed.connect_to_prodev()
-    if connection:
-        try:
-            # Try MySQL syntax first
-            cursor = connection.cursor(dictionary=True)
-        except TypeError:
-            # Fallback to SQLite - connection already has row_factory set
-            cursor = connection.cursor()
-            
-        offset = 0
+    if not connection:
+        return
         
-        while True:
-            cursor.execute(f"SELECT * FROM user_data LIMIT {batchsize} OFFSET {offset}")
-            batch = cursor.fetchall()
-            
-            if not batch:
-                break
-            
-            # Convert SQLite Rows to dicts if needed
-            if batch and hasattr(batch[0], 'keys'):
-                batch = [dict(row) for row in batch]
-                
-            yield batch
-            offset += batchsize
+    try:
+        # Try MySQL syntax first
+        cursor = connection.cursor(dictionary=True)
+    except TypeError:
+        # Fallback to SQLite - connection already has row_factory set
+        cursor = connection.cursor()
         
-        cursor.close()
-        connection.close()
+    offset = 0
+    
+    while True:
+        cursor.execute(f"SELECT * FROM user_data LIMIT {batchsize} OFFSET {offset}")
+        batch = cursor.fetchall()
+        
+        if not batch:
+            break
+        
+        # Convert SQLite Rows to dicts if needed
+        if batch and hasattr(batch[0], 'keys'):
+            batch = [dict(row) for row in batch]
+            
+        # Use yield to return batch and pause execution
+        yield batch
+        offset += batchsize
+    
+    cursor.close()
+    connection.close()
 
 
 def batch_processing(batch_size):
