@@ -74,7 +74,7 @@ async def setup_database(database_name: str = "async_users.db") -> None:
             print(f"Database '{database_name}' created with {len(sample_users)} sample users.")
 
 
-async def async_fetch_users(database_name: str = "async_users.db") -> List[Tuple[Any, ...]]:
+async def asyncfetchusers(database_name: str = "async_users.db") -> List[Tuple[Any, ...]]:
     """
     Asynchronously fetch all users from the database.
     
@@ -84,7 +84,7 @@ async def async_fetch_users(database_name: str = "async_users.db") -> List[Tuple
     Returns:
         List[Tuple]: List of all user records
     """
-    print(">> Starting async_fetch_users...")
+    print(">> Starting asyncfetchusers...")
     start_time = time.time()
     
     try:
@@ -93,15 +93,15 @@ async def async_fetch_users(database_name: str = "async_users.db") -> List[Tuple
                 users = await cursor.fetchall()
                 
         execution_time = time.time() - start_time
-        print(f"[✓] async_fetch_users completed in {execution_time:.3f}s - Found {len(users)} users")
+        print(f"[✓] asyncfetchusers completed in {execution_time:.3f}s - Found {len(users)} users")
         return users
         
     except Exception as e:
-        print(f"[!] Error in async_fetch_users: {e}")
+        print(f"[!] Error in asyncfetchusers: {e}")
         return []
 
 
-async def async_fetch_older_users(database_name: str = "async_users.db", min_age: int = 40) -> List[Tuple[Any, ...]]:
+async def asyncfetcholder_users(database_name: str = "async_users.db", min_age: int = 40) -> List[Tuple[Any, ...]]:
     """
     Asynchronously fetch users older than the specified age.
     
@@ -112,7 +112,7 @@ async def async_fetch_older_users(database_name: str = "async_users.db", min_age
     Returns:
         List[Tuple]: List of user records older than min_age
     """
-    print(f">> Starting async_fetch_older_users (age > {min_age})...")
+    print(f">> Starting asyncfetcholder_users (age > {min_age})...")
     start_time = time.time()
     
     try:
@@ -124,11 +124,11 @@ async def async_fetch_older_users(database_name: str = "async_users.db", min_age
                 older_users = await cursor.fetchall()
                 
         execution_time = time.time() - start_time
-        print(f"[✓] async_fetch_older_users completed in {execution_time:.3f}s - Found {len(older_users)} users")
+        print(f"[✓] asyncfetcholder_users completed in {execution_time:.3f}s - Found {len(older_users)} users")
         return older_users
         
     except Exception as e:
-        print(f"[!] Error in async_fetch_older_users: {e}")
+        print(f"[!] Error in asyncfetcholder_users: {e}")
         return []
 
 
@@ -201,8 +201,8 @@ async def fetch_concurrently(database_name: str = "async_users.db") -> Tuple[Lis
     """
     Execute multiple queries concurrently using asyncio.gather().
     
-    This function demonstrates the main requirement: running async_fetch_users()
-    and async_fetch_older_users() concurrently.
+    This function demonstrates the main requirement: running asyncfetchusers()
+    and asyncfetcholder_users() concurrently.
     
     Args:
         database_name (str): Name of the SQLite database file
@@ -219,8 +219,8 @@ async def fetch_concurrently(database_name: str = "async_users.db") -> Tuple[Lis
     try:
         # Execute the required queries concurrently
         all_users, older_users = await asyncio.gather(
-            async_fetch_users(database_name),
-            async_fetch_older_users(database_name)
+            asyncfetchusers(database_name),
+            asyncfetcholder_users(database_name)
         )
         
         total_time = time.time() - start_time
@@ -256,8 +256,8 @@ async def fetch_advanced_concurrently(database_name: str = "async_users.db") -> 
     try:
         # Execute multiple queries concurrently
         results = await asyncio.gather(
-            async_fetch_users(database_name),
-            async_fetch_older_users(database_name),
+            asyncfetchusers(database_name),
+            asyncfetcholder_users(database_name),
             async_fetch_by_department(database_name, "Engineering"),
             async_fetch_salary_stats(database_name)
         )
@@ -298,8 +298,8 @@ async def compare_sequential_vs_concurrent(database_name: str = "async_users.db"
     print("\n1. Sequential execution:")
     sequential_start = time.time()
     
-    users_seq = await async_fetch_users(database_name)
-    older_users_seq = await async_fetch_older_users(database_name)
+    users_seq = await asyncfetchusers(database_name)
+    older_users_seq = await asyncfetcholder_users(database_name)
     
     sequential_time = time.time() - sequential_start
     print(f"   [Time] Sequential total time: {sequential_time:.3f}s")
@@ -312,8 +312,8 @@ async def compare_sequential_vs_concurrent(database_name: str = "async_users.db"
     concurrent_start = time.time()
     
     users_conc, older_users_conc = await asyncio.gather(
-        async_fetch_users(database_name),
-        async_fetch_older_users(database_name)
+        asyncfetchusers(database_name),
+        asyncfetcholder_users(database_name)
     )
     
     concurrent_time = time.time() - concurrent_start
@@ -398,7 +398,7 @@ async def main():
     print("=" * 80)
     print("Demonstrated features:")
     print("[✓] aiosqlite for asynchronous SQLite operations")
-    print("[✓] async_fetch_users() and async_fetch_older_users() functions")
+    print("[✓] asyncfetchusers() and asyncfetcholder_users() functions")
     print("[✓] asyncio.gather() for concurrent execution")
     print("[✓] asyncio.run() for running concurrent operations")
     print("[✓] Performance comparison between sequential and concurrent")

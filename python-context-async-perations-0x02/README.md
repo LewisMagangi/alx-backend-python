@@ -20,18 +20,18 @@ This project showcases three key Python programming concepts:
 
 ## Tasks Completed
 
-- [ ] **0. Custom class based context manager for Database connection**
+- [x] **0. Custom class based context manager for Database connection**
   - Implemented `DatabaseConnection` class with proper resource management
   - Automatic database connection opening and closing
   - Exception handling with guaranteed cleanup
 
-- [ ] **1. Reusable Query Context Manager**
+- [x] **1. Reusable Query Context Manager**
   - Created `ExecuteQuery` class for parameterized database operations
   - Supports reusable query execution with parameters
   - Proper resource management and error handling
 
 - [ ] **2. Concurrent Asynchronous Database Queries**
-  - Implemented `async_fetch_users()` and `async_fetch_older_users()` functions
+  - Implemented `asyncfetchusers()` and `asyncfetcholder_users()` functions
   - Used `asyncio.gather()` for concurrent query execution
   - Performance comparison between sequential and concurrent operations
 
@@ -43,7 +43,7 @@ This project showcases three key Python programming concepts:
 ## Installation
 
 ```bash
-pip install aiosqlite
+pip install -r requirements.txt
 ```
 
 ## Usage
