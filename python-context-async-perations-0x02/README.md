@@ -30,7 +30,7 @@ This project showcases three key Python programming concepts:
   - Supports reusable query execution with parameters
   - Proper resource management and error handling
 
-- [ ] **2. Concurrent Asynchronous Database Queries**
+- [x] **2. Concurrent Asynchronous Database Queries**
   - Implemented `async_fetch_users()` and `async_fetch_older_users()` functions
   - Used `asyncio.gather()` for concurrent query execution
   - Performance comparison between sequential and concurrent operations
