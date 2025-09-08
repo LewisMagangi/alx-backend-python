@@ -31,7 +31,7 @@ This project showcases three key Python programming concepts:
   - Proper resource management and error handling
 
 - [ ] **2. Concurrent Asynchronous Database Queries**
-  - Implemented `asyncfetchusers()` and `asyncfetcholder_users()` functions
+  - Implemented `async_fetch_users()` and `async_fetch_older_users()` functions
   - Used `asyncio.gather()` for concurrent query execution
   - Performance comparison between sequential and concurrent operations
 
