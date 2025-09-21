@@ -1,5 +1,5 @@
 # from django.shortcuts import render
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, Message
@@ -9,24 +9,29 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+
 # ViewSet for Conversations
 class ConversationViewSet(viewsets.ModelViewSet):
-	queryset = Conversation.objects.all()
-	serializer_class = ConversationSerializer
-	permission_classes = [IsAuthenticated]
+    queryset = Conversation.objects.all()
+    serializer_class = ConversationSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['participants__email', 'participants__first_name', 'participants__last_name']
+    ordering_fields = ['created_at']
 
-	def create(self, request, *args, **kwargs):
-		participants_ids = request.data.get('participants', [])
-		if not participants_ids or not isinstance(participants_ids, list):
-			return Response({'error': 'participants must be a list of user IDs'}, status=status.HTTP_400_BAD_REQUEST)
-		participants = User.objects.filter(user_id__in=participants_ids)
-		if not participants.exists():
-			return Response({'error': 'No valid participants found'}, status=status.HTTP_400_BAD_REQUEST)
-		conversation = Conversation.objects.create()
-		conversation.participants.set(participants)
-		conversation.save()
-		serializer = self.get_serializer(conversation)
-		return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def create(self, request, *args, **kwargs):
+        participants_ids = request.data.get('participants', [])
+        if not participants_ids or not isinstance(participants_ids, list):
+            return Response({'error': 'participants must be a list of user IDs'}, status=status.HTTP_400_BAD_REQUEST)
+        participants = User.objects.filter(user_id__in=participants_ids)
+        if not participants.exists():
+            return Response({'error': 'No valid participants found'}, status=status.HTTP_400_BAD_REQUEST)
+        conversation = Conversation.objects.create()
+        conversation.participants.set(participants)
+        conversation.save()
+        serializer = self.get_serializer(conversation)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 
 # ViewSet for Messages
@@ -34,6 +39,26 @@ class MessageViewSet(viewsets.ModelViewSet):
 	queryset = Message.objects.all()
 	serializer_class = MessageSerializer
 	permission_classes = [IsAuthenticated]
+	filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+	search_fields = ['message_body', 'sender__email']
+	ordering_fields = ['sent_at']
+
+	def create(self, request, *args, **kwargs):
+		conversation_id = request.data.get('conversation')
+		message_body = request.data.get('message_body')
+		if not conversation_id or not message_body:
+			return Response({'error': 'conversation and message_body are required'}, status=status.HTTP_400_BAD_REQUEST)
+		try:
+			conversation = Conversation.objects.get(conversation_id=conversation_id)
+		except Conversation.DoesNotExist:
+			return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+		message = Message.objects.create(
+			sender=request.user,
+			conversation=conversation,
+			message_body=message_body
+		)
+		serializer = self.get_serializer(message)
+		return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 	def create(self, request, *args, **kwargs):
 		conversation_id = request.data.get('conversation')
