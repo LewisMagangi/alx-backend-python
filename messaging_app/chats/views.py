@@ -4,7 +4,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
+from .permissions import IsParticipantOfConversation
+from .pagination import MessagePagination
+from .filters import MessageFilter, ConversationFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -12,12 +17,19 @@ User = get_user_model()
 
 # ViewSet for Conversations
 class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ConversationFilter
     search_fields = ['participants__email', 'participants__first_name', 'participants__last_name']
     ordering_fields = ['created_at']
+
+    def get_queryset(self):
+        """
+        This view should return a list of all conversations
+        for the currently authenticated user.
+        """
+        return Conversation.objects.filter(participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
         participants_ids = request.data.get('participants', [])
@@ -36,45 +48,42 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 # ViewSet for Messages
 class MessageViewSet(viewsets.ModelViewSet):
-	queryset = Message.objects.all()
-	serializer_class = MessageSerializer
-	permission_classes = [IsAuthenticated]
-	filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-	search_fields = ['message_body', 'sender__email']
-	ordering_fields = ['sent_at']
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    pagination_class = MessagePagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = MessageFilter
+    search_fields = ['message_body', 'sender__email']
+    ordering_fields = ['sent_at']
 
-	def create(self, request, *args, **kwargs):
-		conversation_id = request.data.get('conversation')
-		message_body = request.data.get('message_body')
-		if not conversation_id or not message_body:
-			return Response({'error': 'conversation and message_body are required'}, status=status.HTTP_400_BAD_REQUEST)
-		try:
-			conversation = Conversation.objects.get(conversation_id=conversation_id)
-		except Conversation.DoesNotExist:
-			return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
-		message = Message.objects.create(
-			sender=request.user,
-			conversation=conversation,
-			message_body=message_body
-		)
-		serializer = self.get_serializer(message)
-		return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def get_queryset(self):
+        """
+        This view should return a list of all messages
+        from conversations where the current user is a participant.
+        """
+        return Message.objects.filter(conversation__participants=self.request.user)
 
-	def create(self, request, *args, **kwargs):
-		conversation_id = request.data.get('conversation')
-		message_body = request.data.get('message_body')
-		if not conversation_id or not message_body:
-			return Response({'error': 'conversation and message_body are required'}, status=status.HTTP_400_BAD_REQUEST)
-		try:
-			conversation = Conversation.objects.get(conversation_id=conversation_id)
-		except Conversation.DoesNotExist:
-			return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
-		message = Message.objects.create(
-			sender=request.user,
-			conversation=conversation,
-			message_body=message_body
-		)
-		serializer = self.get_serializer(message)
-		return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def create(self, request, *args, **kwargs):
+        conversation_id = request.data.get('conversation')
+        message_body = request.data.get('message_body')
+        if not conversation_id or not message_body:
+            return Response({'error': 'conversation and message_body are required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            conversation = Conversation.objects.get(conversation_id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if user is a participant in the conversation
+        if not conversation.participants.filter(user_id=request.user.user_id).exists():
+            return Response({'error': 'You are not a participant in this conversation'}, 
+                          status=status.HTTP_403_FORBIDDEN)
+            
+        message = Message.objects.create(
+            sender=request.user,
+            conversation=conversation,
+            message_body=message_body
+        )
+        serializer = self.get_serializer(message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # Create your views here.
