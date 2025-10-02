@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 # from django.shortcuts import render
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
@@ -48,6 +50,10 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 # ViewSet for Messages
 class MessageViewSet(viewsets.ModelViewSet):
+    # Cache the list view for 60 seconds
+    @method_decorator(cache_page(60))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     pagination_class = MessagePagination
