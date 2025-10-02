@@ -1,3 +1,7 @@
+class UnreadMessagesManager(models.Manager):
+    def for_user(self, user):
+        # Only fetch unread messages for the given user, optimize with .only()
+        return self.get_queryset().filter(receiver=user, read=False).only('id', 'sender', 'receiver', 'content', 'timestamp', 'parent_message')
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -11,6 +15,11 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)  # True if message has been edited
     parent_message = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    read = models.BooleanField(default=False)  # True if message has been read
+
+    # Custom manager for unread messages
+    objects = models.Manager()  # Default manager
+    unread = UnreadMessagesManager()  # Custom manager
 
     def __str__(self):
         return f"From {self.sender} to {self.receiver}: {self.content[:20]}"
