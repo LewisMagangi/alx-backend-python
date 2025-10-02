@@ -10,9 +10,26 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)  # True if message has been edited
+    parent_message = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
 
     def __str__(self):
         return f"From {self.sender} to {self.receiver}: {self.content[:20]}"
+
+    def get_all_replies(self):
+        """
+        Recursively fetch all replies to this message in a threaded structure.
+        Returns a list of dicts: { 'message': Message, 'replies': [...] }
+        """
+        def fetch_replies(message):
+            replies = message.replies.all().select_related('sender', 'receiver').prefetch_related('replies')
+            return [
+                {
+                    'message': reply,
+                    'replies': fetch_replies(reply)
+                }
+                for reply in replies
+            ]
+        return fetch_replies(self)
 
 # Stores the old content of a message before it was edited
 class MessageHistory(models.Model):
