@@ -1,3 +1,41 @@
+from django.views.decorators.http import require_GET
+from django.http import JsonResponse
+from .models import Message
+from django.db import models
+
+def build_thread(message):
+    """
+    Recursively build a threaded structure for a message and its replies.
+    """
+    return {
+        'id': message.id,
+        'sender': message.sender_id,
+        'receiver': message.receiver_id,
+        'content': message.content,
+        'timestamp': message.timestamp,
+        'replies': [build_thread(reply) for reply in message.replies.all()]
+    }
+
+@require_GET
+@login_required
+def threaded_messages(request):
+    """
+    Return all top-level messages (no parent) for the user, with threaded replies.
+    Optimized with select_related and prefetch_related.
+    Optional query params: sender, receiver
+    """
+    qs = Message.objects.filter(parent_message__isnull=True).select_related('sender', 'receiver').prefetch_related('replies')
+    sender = request.GET.get('sender')
+    receiver = request.GET.get('receiver')
+    if sender:
+        qs = qs.filter(sender_id=sender)
+    if receiver:
+        qs = qs.filter(receiver_id=receiver)
+    # Default: show messages where user is sender or receiver
+    if not sender and not receiver:
+        qs = qs.filter(models.Q(sender=request.user) | models.Q(receiver=request.user))
+    threads = [build_thread(msg) for msg in qs]
+    return JsonResponse({'threads': threads})
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
