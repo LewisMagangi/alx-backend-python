@@ -3,6 +3,7 @@ class UnreadMessagesManager(models.Manager):
         # Only fetch unread messages for the given user, optimize with .only()
         return self.get_queryset().filter(receiver=user, read=False).only('id', 'sender', 'receiver', 'content', 'timestamp', 'parent_message')
 from django.db import models
+from .managers import UnreadMessagesManager
 from django.contrib.auth import get_user_model
 
 User = get_user_model()

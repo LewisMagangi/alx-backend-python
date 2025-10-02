@@ -1,3 +1,21 @@
+@require_GET
+@login_required
+def unread_messages(request):
+    """
+    Return all unread messages for the logged-in user, optimized with .only().
+    """
+    unread_qs = Message.unread.unread_for_user(request.user)
+    data = [
+        {
+            'id': msg.id,
+            'sender': msg.sender_id,
+            'receiver': msg.receiver_id,
+            'content': msg.content,
+            'timestamp': msg.timestamp,
+        }
+        for msg in unread_qs
+    ]
+    return JsonResponse({'unread_messages': data})
 from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 from .models import Message
