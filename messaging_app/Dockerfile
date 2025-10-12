@@ -25,4 +25,4 @@ COPY . /app/
 EXPOSE 8000
 
 # Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "messaging_app.wsgi:application"]
+CMD ["python3", "manage.py", "runserver", "-p", "8000", "0.0.0.0:8000"]
