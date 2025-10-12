@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django
+*.log
+db.sqlite3
+media/
+
+# Environment variables
+.env
+.env.*
+
+# Docker
+.docker/
+
+# MySQL data
+mysql_data/
+
+# IDE
+.vscode/
+.idea/
