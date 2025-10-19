@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# kubctl-0x01 - Scale Django Kubernetes Deployment and Test Performance
+# Author: Lewis
+# Purpose: Scale the Django app to 3 replicas, verify, test with wrk, and monitor usage
+
+set -e
+set -o pipefail
+
+DEPLOYMENT_NAME="messaging-app-deployment"
+SERVICE_NAME="messaging-app-service"
+PORT=8000
+
+echo "🚀 Scaling Django deployment to 3 replicas..."
+kubectl scale deployment "$DEPLOYMENT_NAME" --replicas=3
+
+echo "⏳ Waiting for pods to start..."
+sleep 10
+
+echo "✅ Verifying pods:"
+kubectl get pods -l app=messaging-app
+
+echo "📊 Checking resource usage..."
+if ! kubectl top pods &>/dev/null; then
+  echo "⚠️ Metrics server not found. Enabling metrics-server in Minikube..."
+  minikube addons enable metrics-server
+  sleep 15
+fi
+kubectl top pods || echo "⚠️ Still unable to fetch resource metrics."
+
+echo "🔁 Port-forwarding Django service to localhost:$PORT..."
+kubectl port-forward service/"$SERVICE_NAME" $PORT:$PORT >/tmp/portforward.log 2>&1 &
+PORT_FORWARD_PID=$!
+sleep 5
+
+# Ensure wrk is installed
+if ! command -v wrk &> /dev/null; then
+  echo "⚙️ Installing wrk (load testing tool)..."
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    sudo apt-get update -y && sudo apt-get install wrk -y
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    brew install wrk
+  else
+    echo "❌ Unsupported OS for automatic wrk installation."
+    exit 1
+  fi
+fi
+
+echo "🔥 Running load test with wrk for 20 seconds..."
+wrk -t4 -c100 -d20s http://127.0.0.1:$PORT/ || echo "⚠️ Load test may have failed — check service availability."
+
+echo "🧹 Cleaning up port-forward process..."
+kill "$PORT_FORWARD_PID" >/dev/null 2>&1 || true
+
+echo "🎯 Scaling and load testing completed successfully!"
