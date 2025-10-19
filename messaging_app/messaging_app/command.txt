@@ -1,0 +1,17 @@
+# Enable ingress controller in Minikube
+minikube addons enable ingress
+
+# Verify ingress controller is running
+kubectl get pods -n kube-system | grep ingress
+
+# Apply the ingress resource for the Django app
+kubectl apply -f messaging_app/ingress.yaml
+
+# Verify ingress was created
+kubectl get ingress
+
+# Get the Minikube cluster IP
+minikube ip
+
+# Add to hosts file (example)
+# echo "$(minikube ip) messaging.local" | sudo tee -a /etc/hosts
