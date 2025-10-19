@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# kubctl-0x02 - Blue-Green Deployment Automation Script
+# Author: Lewis
+# Purpose: Deploy both versions and check logs for errors
+
+set -e
+set -o pipefail
+
+BLUE_DEPLOY="messaging-app-blue"
+GREEN_DEPLOY="messaging-app-green"
+SERVICE_NAME="messaging-app-service"
+
+echo "🚀 Applying Blue and Green deployments..."
+kubectl apply -f messaging_app/blue_deployment.yaml
+kubectl apply -f messaging_app/green_deployment.yaml
+kubectl apply -f messaging_app/kubeservice.yaml
+
+echo "⏳ Waiting for pods to initialize..."
+sleep 10
+
+echo "📋 Checking running pods:"
+kubectl get pods -l app=messaging-app
+
+echo "📊 Current Service routing:"
+kubectl get service "$SERVICE_NAME" -o wide
+
+echo "🧾 Checking logs for BLUE deployment:"
+kubectl logs -l app=messaging-app,version=blue --tail=20 || echo "⚠️ No logs found for Blue."
+
+echo "🧾 Checking logs for GREEN deployment:"
+kubectl logs -l app=messaging-app,version=green --tail=20 || echo "⚠️ No logs found for Green."
+
+read -p "🔄 Switch traffic to GREEN version? (y/n): " confirm
+if [[ "$confirm" =~ ^[Yy]$ ]]; then
+  echo "🟢 Switching Service to GREEN deployment..."
+  kubectl patch service "$SERVICE_NAME" -p '{"spec":{"selector":{"app":"messaging-app","version":"green"}}}'
+  echo "✅ Traffic now directed to GREEN version."
+else
+  echo "🟦 Keeping traffic on BLUE version."
+fi
+
+echo "🔍 Verify new routing:"
+kubectl describe service "$SERVICE_NAME" | grep Selector
+
+echo "🎯 Blue-Green Deployment completed successfully!"
