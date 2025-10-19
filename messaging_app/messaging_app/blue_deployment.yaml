@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-app-blue
+  labels:
+    app: messaging-app
+    version: blue
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1   # Ensures at least 2 pods are always available
+      maxSurge: 1         # Allows 1 extra pod during rollout
+  selector:
+    matchLabels:
+      app: messaging-app
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: messaging-app
+        version: blue
+    spec:
+      containers:
+        - name: messaging-app
+          image: messaging-app:2.0  # ✅ Updated version
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: messaging_app.settings
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
