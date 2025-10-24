@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout Source') {
             steps {
                 echo '📥 Checking out source code...'
-                git branch: 'main',
+                git branch: 'master',
                     url: "${REPO_URL}",
                     credentialsId: "${GITHUB_CREDENTIALS}"
             }
