@@ -2,9 +2,12 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_CREDENTIALS = 'github-creds'   // Jenkins credential ID
+        GITHUB_CREDENTIALS = 'github-creds'      // Jenkins GitHub credentials
+        DOCKER_CREDENTIALS = 'dockerhub-creds'   // Jenkins Docker Hub PAT
         REPO_URL = 'https://github.com/LewisMagangi/alx-backend-python.git'
         PYTHON_ENV = "${WORKSPACE}/venv"
+        IMAGE_NAME = 'lewismagangi/alx-backend-python' // Docker Hub repository
+        IMAGE_TAG = "latest"  // You can make this dynamic using commit hash if you want
     }
 
     stages {
@@ -20,9 +23,8 @@ pipeline {
         stage('Set Up Python Environment') {
             steps {
                 echo '🐍 Setting up a Python virtual environment...'
-                // Use bash explicitly to avoid 'source: not found'
                 sh '''#!/bin/bash
-                    set -e  # Exit on error
+                    set -e
                     python3 -m venv venv
                     source venv/bin/activate
                     python -m pip install --upgrade pip
@@ -47,14 +49,37 @@ pipeline {
                 }
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                echo '🐳 Building Docker image...'
+                sh '''#!/bin/bash
+                    set -e
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} messaging_app
+                '''
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo '⬆️ Pushing Docker image to Docker Hub...'
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    sh '''#!/bin/bash
+                        set -e
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    '''
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo '✅ Build and tests completed successfully!'
+            echo '✅ Build, tests, and Docker push completed successfully!'
         }
         failure {
-            echo '❌ Build or tests failed. Check the test report.'
+            echo '❌ Pipeline failed. Check logs for details.'
         }
     }
 }
