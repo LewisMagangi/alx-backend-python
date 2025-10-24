@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+
+    environment {
+        GITHUB_CREDENTIALS = 'github-creds'   // Jenkins credential ID
+        REPO_URL = 'https://github.com/LewisMagangi/alx-backend-python.git'
+        PYTHON_ENV = "${WORKSPACE}/venv"
+    }
+
+    stages {
+        stage('Checkout Source') {
+            steps {
+                echo '📥 Checking out source code...'
+                git branch: 'main',
+                    url: "${REPO_URL}",
+                    credentialsId: "${GITHUB_CREDENTIALS}"
+            }
+        }
+
+        stage('Set Up Python Environment') {
+            steps {
+                echo '🐍 Setting up Python virtual environment...'
+                sh '''
+                    python3 -m venv venv
+                    source venv/bin/activate
+                    python -m pip install --upgrade pip
+                    pip install -r messaging_app/requirements.txt || true
+                    pip install pytest
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                echo '🧪 Running pytest...'
+                sh '''
+                    source venv/bin/activate
+                    pytest messaging_app/tests/ --junitxml=report.xml
+                '''
+            }
+            post {
+                always {
+                    junit 'report.xml'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build and tests completed successfully!'
+        }
+        failure {
+            echo '❌ Build or tests failed. Check the test report.'
+        }
+    }
+}
