@@ -19,7 +19,7 @@ pipeline {
 
         stage('Set Up Python Environment') {
             steps {
-                echo '🐍 Setting up Python virtual environment...'
+                echo '🐍 Setting up a Python virtual environment...'
                 sh '''
                     python3 -m venv venv
                     source venv/bin/activate
