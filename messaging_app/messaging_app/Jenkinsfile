@@ -20,12 +20,14 @@ pipeline {
         stage('Set Up Python Environment') {
             steps {
                 echo '🐍 Setting up a Python virtual environment...'
-                sh '''
+                // Use bash explicitly to avoid 'source: not found'
+                sh '''#!/bin/bash
+                    set -e  # Exit on error
                     python3 -m venv venv
                     source venv/bin/activate
                     python -m pip install --upgrade pip
-                    pip3 install -r messaging_app/requirements.txt || true
-                    pip3 install pytest
+                    pip install -r messaging_app/requirements.txt
+                    pip install pytest
                 '''
             }
         }
@@ -33,7 +35,8 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo '🧪 Running pytest...'
-                sh '''
+                sh '''#!/bin/bash
+                    set -e
                     source venv/bin/activate
                     pytest messaging_app/tests/ --junitxml=report.xml
                 '''
