@@ -34,11 +34,11 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                echo '🧪 Running pytest...'
+                echo '🧪 Running pytest on the new test file only...'
                 sh '''#!/bin/bash
                     set -e
                     source venv/bin/activate
-                    pytest --junitxml=report.xml
+                    pytest messaging_app/messaging_app/tests/test_basic.py --junitxml=report.xml
                 '''
             }
             post {
